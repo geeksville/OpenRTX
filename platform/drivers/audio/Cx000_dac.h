@@ -1,8 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 2020 - 2023 by Federico Amedeo Izzo IU2NUO,             *
- *                                Niccolò Izzo IU2KIN                      *
- *                                Frederik Saraci IU2NRO                   *
- *                                Silvano Seva IU2KWO                      *
+ *   Copyright (C) 2024 by Silvano Seva IU2KWO                             *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
  *   it under the terms of the GNU General Public License as published by  *
@@ -18,28 +15,57 @@
  *   along with this program; if not, see <http://www.gnu.org/licenses/>   *
  ***************************************************************************/
 
-#include <peripherals/gpio.h>
-#include <hwconfig.h>
-#include <stdint.h>
-#include <SPI2.h>
+#ifndef Cx000_DAC_H
+#define Cx000_DAC_H
 
-/*
- * Implementation of external flash SPI interface for MD9600 devices.
+#include <stdbool.h>
+#include <stdint.h>
+#include <interfaces/audio.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/**
+ * Driver to use the HR_Cx000 internal DAC as audio output stream device.
+ * Input data format is signed 16-bit and only a single instance of this driver
+ * is allowed.
  */
 
-uint8_t spiFlash_SendRecv(uint8_t val)
-{
-    spi2_lockDeviceBlocking();
-    uint8_t x = spi2_sendRecv(val);
-    spi2_releaseDevice();
+extern const struct audioDriver Cx000_dac_audio_driver;
 
-    return x;
-}
+/**
+ * Start generation of a "beep" tone from DAC output.
+ *
+ * @param freq: tone frequency in Hz.
+ * @return zero on success, a negative error code otherwise.
+ */
+int Cx000dac_startBeep(const uint16_t freq);
 
-void spiFlash_init()
-{
-}
+/**
+ * Stop an ongoing "beep" tone.
+ */
+void Cx000dac_stopBeep();
 
-void spiFlash_terminate()
-{
-}
+#ifdef __cplusplus
+}   // extern "C"
+
+/**
+ * Initialize the driver.
+ */
+void Cx000dac_init(HR_C6000 *device);
+
+/**
+ * Shutdown the driver.
+ */
+void Cx000dac_terminate();
+
+/**
+ * Driver task function, to be called at least once every 4ms to ensure a
+ * proper operation.
+ */
+void Cx000dac_task();
+
+#endif
+
+#endif /* Cx000_DAC_H */

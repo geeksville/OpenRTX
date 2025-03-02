@@ -1,8 +1,9 @@
 /***************************************************************************
- *   Copyright (C) 2020 - 2023 by Federico Amedeo Izzo IU2NUO,             *
+ *   Copyright (C) 2020 - 2025 by Federico Amedeo Izzo IU2NUO,             *
  *                                Niccolò Izzo IU2KIN                      *
  *                                Frederik Saraci IU2NRO                   *
  *                                Silvano Seva IU2KWO                      *
+ *                                Grzegorz Kaczmarek SP6HFE                *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
  *   it under the terms of the GNU General Public License as published by  *
@@ -218,6 +219,9 @@ const char *authors[] =
     "Silvano IU2KWO",
     "Federico IU2NUO",
     "Fred IU2NRO",
+    "Joseph VK7JS",
+    "Morgan ON4MOD",
+    "Marco DM4RCO"
 };
 
 static const char *symbols_ITU_T_E161[] =
@@ -912,14 +916,14 @@ static void _ui_fsm_menuMacro(kbd_msg_t msg, bool *sync_rtx)
             {
                 if(state.channel.fm.txTone == 0)
                 {
-                    state.channel.fm.txTone = MAX_TONE_INDEX-1;
+                    state.channel.fm.txTone = CTCSS_FREQ_NUM-1;
                 }
                 else
                 {
                     state.channel.fm.txTone--;
                 }
 
-                state.channel.fm.txTone %= MAX_TONE_INDEX;
+                state.channel.fm.txTone %= CTCSS_FREQ_NUM;
                 state.channel.fm.rxTone = state.channel.fm.txTone;
                 *sync_rtx = true;
                 vp_announceCTCSS(state.channel.fm.rxToneEn,
@@ -934,7 +938,7 @@ static void _ui_fsm_menuMacro(kbd_msg_t msg, bool *sync_rtx)
             if(state.channel.mode == OPMODE_FM)
             {
                 state.channel.fm.txTone++;
-                state.channel.fm.txTone %= MAX_TONE_INDEX;
+                state.channel.fm.txTone %= CTCSS_FREQ_NUM;
                 state.channel.fm.rxTone = state.channel.fm.txTone;
                 *sync_rtx = true;
                 vp_announceCTCSS(state.channel.fm.rxToneEn,
@@ -1095,14 +1099,18 @@ static void _ui_textInputKeypad(char *buf, uint8_t max_len, kbd_msg_t msg,
 {
     long long now = getTick();
     // Get currently pressed number key
-    uint8_t num_key = input_getPressedNumber(msg);
+    uint8_t num_key = input_getPressedChar(msg);
 
     bool key_timeout = ((now - ui_state.last_keypress) >= input_longPressTimeout);
     bool same_key = ui_state.input_number == num_key;
     // Get number of symbols related to currently pressed key
     uint8_t num_symbols = 0;
     if(callsign)
+    {
         num_symbols = strlen(symbols_ITU_T_E161_callsign[num_key]);
+        if(num_symbols == 0)
+            return;
+    }
     else
         num_symbols = strlen(symbols_ITU_T_E161[num_key]);
 
@@ -1370,6 +1378,13 @@ void ui_updateFSM(bool *sync_rtx)
     }
 #endif // PLATFORM_TTWRPLUS
 
+    // Unlatch and exit from macro menu on PTT press
+    if(macro_latched && txOngoing)
+    {
+        macro_latched = false;
+        macro_menu = false;
+    }
+
     long long now = getTick();
     // Process pressed keys
     if(event.type == EVENT_KBD)
@@ -1476,7 +1491,7 @@ void ui_updateFSM(bool *sync_rtx)
                         else if(msg.keys & KEY_UP || msg.keys & KEY_DOWN ||
                                 msg.keys & KEY_LEFT || msg.keys & KEY_RIGHT)
                             _ui_textInputDel(ui_state.new_callsign);
-                        else if(input_isNumberPressed(msg))
+                        else if(input_isCharPressed(msg))
                             _ui_textInputKeypad(ui_state.new_callsign, 9, msg, true);
                         break;
                     }
@@ -1682,7 +1697,7 @@ void ui_updateFSM(bool *sync_rtx)
                         else if(msg.keys & KEY_UP || msg.keys & KEY_DOWN ||
                                 msg.keys & KEY_LEFT || msg.keys & KEY_RIGHT)
                             _ui_textInputDel(ui_state.new_callsign);
-                        else if(input_isNumberPressed(msg))
+                        else if(input_isCharPressed(msg))
                             _ui_textInputKeypad(ui_state.new_callsign, 9, msg, true);
                         break;
                     }
@@ -1972,9 +1987,16 @@ void ui_updateFSM(bool *sync_rtx)
                 else if(msg.keys & KEY_ESC)
                     _ui_menuBack(MENU_TOP);
                 break;
-            // About screen
+            // About screen, scroll without rollover
             case MENU_ABOUT:
-                if(msg.keys & KEY_ESC)
+                if(msg.keys & KEY_UP || msg.keys & KNOB_LEFT)
+                {
+                    if(ui_state.menu_selected > 0)
+                        ui_state.menu_selected -= 1;
+                }
+                else if(msg.keys & KEY_DOWN || msg.keys & KNOB_RIGHT)
+                    ui_state.menu_selected += 1;
+                else if(msg.keys & KEY_ESC)
                     _ui_menuBack(MENU_TOP);
                 break;
 #ifdef CONFIG_RTC
@@ -2263,7 +2285,7 @@ void ui_updateFSM(bool *sync_rtx)
                             {
                                 _ui_textInputDel(ui_state.new_callsign);
                             }
-                            else if(input_isNumberPressed(msg))
+                            else if(input_isCharPressed(msg))
                             {
                                 _ui_textInputKeypad(ui_state.new_callsign, 9, msg, true);
                             }
@@ -2445,10 +2467,8 @@ void ui_updateFSM(bool *sync_rtx)
         }
 #endif //            CONFIG_GPS
 
-        if (txOngoing || rtx_rxSquelchOpen())
+        if (txOngoing || rtx_rxSquelchOpen() || (state.volume != last_state.volume))
         {
-            if (txOngoing)
-                macro_latched = 0;
             _ui_exitStandby(now);
             return;
         }
@@ -2529,7 +2549,7 @@ bool ui_updateGUI()
             break;
         // About menu screen
         case MENU_ABOUT:
-            _ui_drawMenuAbout();
+            _ui_drawMenuAbout(&ui_state);
             break;
 #ifdef CONFIG_RTC
         // Time&Date settings screen

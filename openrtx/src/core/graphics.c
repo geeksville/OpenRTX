@@ -31,6 +31,7 @@
 #include <limits.h>
 #include <stdio.h>
 #include <math.h>
+#include <utils.h>
 
 #include <gfxfont.h>
 #include <TomThumb.h>
@@ -149,7 +150,11 @@ static bw_t _color2bw(color_t true_color)
 #error Please define a pixel format type into hwconfig.h or meson.build
 #endif
 
+#if defined(PLATFORM_LINUX)
+static PIXEL_T framebuffer[FB_SIZE];
+#else
 static PIXEL_T __attribute__((section(".bss.fb"))) framebuffer[FB_SIZE];
+#endif
 static char text[32];
 
 
@@ -775,9 +780,7 @@ void gfx_drawSmeter(point_t start, uint16_t width, uint16_t height, rssi_t rssi,
 
     // RSSI bar
     uint16_t rssi_height = bar_height * 4 / bar_height_divider;
-    int16_t  s_level =  (127 + rssi) / 6;
-    uint16_t rssi_width = (s_level < 0) ? 0 : (s_level * (width - 1) / 11);
-    rssi_width = (s_level > 10) ? width : rssi_width;
+    uint16_t rssi_width = (rssiToSlevel(rssi) * (width - 1) / 11);
     point_t rssi_pos = { start.x, (uint8_t) (start.y + 2 + squelch_height + volume_height)};
     gfx_drawRect(rssi_pos, rssi_width, rssi_height, white, true);
 }
@@ -843,11 +846,10 @@ void gfx_drawSmeterLevel(point_t start, uint16_t width, uint16_t height, rssi_t 
     uint16_t level_width = (width * level) / 255;
     point_t level_pos = { start.x, (uint8_t) (start.y + 2 + volume_height)};
     gfx_drawRect(level_pos, level_width, level_height, green, true);
+
     // RSSI bar
-    int16_t  s_level =  (127 + rssi) / 6;
     uint16_t rssi_height = bar_height * 3 / bar_height_divider;
-    uint16_t rssi_width = (s_level < 0) ? 0 : (s_level * (width - 1) / 11);
-    rssi_width = (s_level > 10) ? width : rssi_width;
+    uint16_t rssi_width = (rssiToSlevel(rssi) * (width - 1) / 11);
     point_t rssi_pos = {start.x, (uint8_t) (start.y + 5 + level_height + volume_height)};
     gfx_drawRect(rssi_pos, rssi_width, rssi_height, white, true);
     // S-level marks and numbers

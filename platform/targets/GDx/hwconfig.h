@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 2021 - 2023 by Federico Amedeo Izzo IU2NUO,             *
+ *   Copyright (C) 2020 - 2024 by Federico Amedeo Izzo IU2NUO,             *
  *                                Niccolò Izzo IU2KIN                      *
  *                                Frederik Saraci IU2NRO                   *
  *                                Silvano Seva IU2KWO                      *
@@ -18,51 +18,43 @@
  *   along with this program; if not, see <http://www.gnu.org/licenses/>   *
  ***************************************************************************/
 
-#include "HR_C5000_wrapper.h"
-#include "HR_C5000.h"
+#ifndef HWCONFIG_H
+#define HWCONFIG_H
 
-void C5000_init()
-{
-    HR_C5000::instance().init();
-}
+#include <MK22F51212.h>
 
-void C5000_terminate()
-{
-    HR_C5000::instance().terminate();
-}
+#ifdef PLATFORM_GD77
+#include "pinmap_GD77.h"
+#else
+#include "pinmap_DM1801.h"
+#endif
 
-void C5000_setModOffset(uint8_t offset)
-{
-    HR_C5000::instance().setModOffset(offset);
-}
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-void C5000_setModAmplitude(uint8_t iAmp, uint8_t qAmp)
-{
-    HR_C5000::instance().setModAmplitude(iAmp, qAmp);
-}
+extern const struct spiCustomDevice nvm_spi;
+extern const struct spiDevice c6000_spi;
 
-void C5000_setModFactor(uint8_t mf)
-{
-    HR_C5000::instance().setModFactor(mf);
-}
+/* Screen dimensions */
+#define CONFIG_SCREEN_WIDTH 128
+#define CONFIG_SCREEN_HEIGHT 64
 
-void C5000_dmrMode()
-{
-    HR_C5000::instance().dmrMode();
-}
+/* Screen pixel format */
+#define CONFIG_PIX_FMT_BW
 
-void C5000_fmMode()
-{
-    HR_C5000::instance().fmMode();
-}
+/* Screen has adjustable contrast */
+#define CONFIG_SCREEN_CONTRAST
+#define CONFIG_DEFAULT_CONTRAST 71
 
-void C5000_startAnalogTx()
-{
-    HR_C5000::instance().startAnalogTx(TxAudioSource::MIC, FmConfig::PREEMPH_EN |
-                                                           FmConfig::BW_25kHz);
-}
+/* Screen has adjustable brightness */
+#define CONFIG_SCREEN_BRIGHTNESS
 
-void C5000_stopAnalogTx()
-{
-    HR_C5000::instance().stopAnalogTx();
+/* Battery type */
+#define CONFIG_BAT_LIPO_2S
+
+#ifdef __cplusplus
 }
+#endif
+
+#endif /* HWCONFIG_H */

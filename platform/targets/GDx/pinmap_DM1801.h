@@ -1,8 +1,8 @@
 /***************************************************************************
- *   Copyright (C) 2023 by Federico Amedeo Izzo IU2NUO,                    *
- *                         Niccolò Izzo IU2KIN,                            *
- *                         Frederik Saraci IU2NRO,                         *
- *                         Silvano Seva IU2KWO                             *
+ *   Copyright (C) 2023 - 2024 by Federico Amedeo Izzo IU2NUO,             *
+ *                                Niccolò Izzo IU2KIN,                     *
+ *                                Frederik Saraci IU2NRO,                  *
+ *                                Silvano Seva IU2KWO                      *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
  *   it under the terms of the GNU General Public License as published by  *
@@ -35,7 +35,7 @@
 #define LCD_DAT     GPIOC,12
 
 /* Signalling LEDs */
-#define GREEN_LED  GPIOB,18
+#define GREEN_LED  GPIOA,17
 #define RED_LED    GPIOC,14
 
 /* Keyboard */
@@ -56,10 +56,10 @@
 #define MONI_SW  GPIOB,9
 
 /* External flash */
-#define FLASH_CS  GPIOA,19
+#define FLASH_CS  &GpioE,6
 #define FLASH_CLK GPIOE,5
 #define FLASH_SDO GPIOE,4
-#define FLASH_SDI GPIOE,6
+#define FLASH_SDI GPIOA,19
 
 /* I2C for EEPROM and AT1846S */
 #define I2C_SDA GPIOE,25
@@ -68,8 +68,8 @@
 /* RTX stage control */
 #define VHF_LNA_EN GPIOC,13
 #define UHF_LNA_EN GPIOC,15
-#define VHF_PA_EN  GPIOE,3
-#define UHF_PA_EN  GPIOE,2
+#define VHF_PA_EN  GPIOE,0
+#define UHF_PA_EN  GPIOE,1
 
 /* Audio control */
 #define AUDIO_AMP_EN GPIOB,0
@@ -77,9 +77,9 @@
 #define TX_AUDIO_MUX GPIOC,6
 
 /* HR_C6000 control interface */
-#define DMR_RESET GPIOE,0
-#define DMR_SLEEP GPIOE,1
-#define DMR_CS    GPIOD,0
+#define DMR_RESET GPIOE,2
+#define DMR_SLEEP GPIOE,3
+#define DMR_CS    &GpioD,0
 #define DMR_CLK   GPIOD,1
 #define DMR_MOSI  GPIOD,2
 #define DMR_MISO  GPIOD,3
